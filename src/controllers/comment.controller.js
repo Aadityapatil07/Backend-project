@@ -12,7 +12,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     const comments = await Comment.aggregatePaginate(Comment.aggregate([
         {
             $match: {
-                video: videoId
+                video: new mongoose.Types.ObjectId(videoId.trim())
             }
         },
         {
@@ -26,36 +26,34 @@ const getVideoComments = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 likesCount: {
-                    $size: "commentLikes"
+                    $size: "$commentLikes"
                 },
                 isLike: {
-                    $cond: {
-                        if: {
-                            $in: [req.user?._id, "commentlikes.likedBy"],
-                            $then: true,
-                            $else: false
+                    $cond: { 
+                        if:{$in: [req.user?._id, "$commentLikes.likedBy"]},
+                        then: true,
+                        else: false
                         }
 
                     }
 
-                }
-
             }
 
         },
         {
-            project:{
+            $project:{
                 content:1,
                 video:1,
-                likesCount:1,
                 isLike:1,
-                owner:1
+                likesCount:1,
+                owner:1,
+                commentLikes:1
 
             }
 
         },
         {
-            sort:{
+            $sort:{
                 likesCount: -1
             }
         }
@@ -74,7 +72,6 @@ return res.status(200).json(
 })
 
 const addComment = asyncHandler(async (req, res) => {
-
     const { content } = req.body
     const { videoId } = req.params
     const userId = req.user._id
@@ -86,7 +83,7 @@ const addComment = asyncHandler(async (req, res) => {
         const comment = await Comment.create({
             content,
             video: new mongoose.Types.ObjectId(videoId.trim()),
-            owner: new mongoose.Types.ObjectId(userId.trim())
+            owner: new mongoose.Types.ObjectId(userId)
         })
 
         return res
@@ -95,7 +92,7 @@ const addComment = asyncHandler(async (req, res) => {
                 new ApiResponse(201, comment, "comment added successfully")
             )
     } catch (error) {
-        throw new ApiError(500, "error while creating comment")
+        throw new ApiError(500,error || "error while creating comment")
 
     }
 

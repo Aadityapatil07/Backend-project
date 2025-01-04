@@ -101,10 +101,35 @@ const addComment = asyncHandler(async (req, res) => {
 
 const updateComment = asyncHandler(async (req, res) => {
     // TODO: update a comment
+    const {commentId} = req.params
+        const {content} = req.body
+    
+        try {
+            const updatedcomment = await Comment.findByIdAndUpdate(
+                commentId,
+                { content },
+                {new : true}
+            )
+            return res.status(200).json(
+                new ApiResponse(200, updatedcomment, "comment updated successfully")
+            )
+        } catch (error) {
+            throw new ApiError(500, "Error updating the comment")
+        }
 })
 
 const deleteComment = asyncHandler(async (req, res) => {
     // TODO: delete a comment
+    const {commentId} = req.param
+    try {
+            const deleteTweet = await Comment.findByIdAndDelete(commentId)
+            return res.status(200).json(
+                new ApiResponse(200, null, "Comment deleted successfully")
+            )
+        
+    } catch (error) {
+        throw new ApiError(500, "Error deleting the Comment")
+    }
 })
 
 export {
